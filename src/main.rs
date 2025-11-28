@@ -125,18 +125,8 @@ fn update_name(tasks: &mut Vec<Task>) {
         tasks[i].change_name();
     }
 }
-
-fn save_file(tasks: &Vec<Task>) {
-    let json = serde_json::to_string_pretty(tasks)
-        .expect("ошибочка");
-
-    std::fs::write("tasks.json", json)
-        .expect("ошибочка");
-
-    println!("все сохранилось!!");
-}
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug)]
 
 enum TaskStatus {
     Unready,
@@ -145,7 +135,7 @@ enum TaskStatus {
     Undefined
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug)]
 enum TaskPriority {
     Low,
     Medium,
@@ -153,13 +143,13 @@ enum TaskPriority {
     Undefined
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug)]
 struct User {
     id: u32,
     name: String
 }
 
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug)]
 struct Task {
     id: u32,
     name: String,
@@ -309,8 +299,6 @@ fn main() {
     let conn = init_db().expect("база данных не хочет открываться:(");
     let mut tasks = load_db(&conn).expect("ошибка загрузки:(");
 
-    let mut tasks: Vec<Task> = Vec::new();
-
     loop {
         println!("---------------меню---------------");
         println!("1. создать таску");
@@ -404,8 +392,6 @@ fn main() {
                 }
             }
             "9" => {
-                println!("сохраняемся...");
-                save_file(&tasks);
                 println!("выход...");
                 break;
             }

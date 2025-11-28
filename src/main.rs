@@ -3,7 +3,7 @@ use std::io::Write;
 mod db;
 use db::init_db;
 
-use crate::db::{delete_task, load_db, update_task};
+use crate::db::{delete_task, insert_task, load_db, update_task};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 fn input(text: &str) -> String {
@@ -317,6 +317,7 @@ fn main() {
         match choice.trim() {
             "1" => {
                 let task = Task::new_task(tasks.len() as u32 + 1, 1, 1);
+                insert_task(&conn, &task).expect("ничего не добавилось:(");
                 tasks.push(task);
             }
             "2" => show_tasks(&tasks),

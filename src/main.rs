@@ -1,5 +1,9 @@
 use std::io;
 use std::io::Write;
+mod db;
+use db::init_db;
+
+use crate::db::{delete_task, load_db, update_task};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 fn input(text: &str) -> String {
@@ -178,10 +182,29 @@ impl TaskStatus {
         }
     }
     
+    fn to_string(&self) -> &'static str {
+        match self {
+            TaskStatus::Unready => "не сделано",
+            TaskStatus::InProcess => "в процессе",
+            TaskStatus::Done => "готово",
+            TaskStatus::Undefined => "неизвестно"
+            
+        }
+    }
 }
 
 impl TaskPriority {
     fn to_ru(&self) -> &str {
+        match self {
+            TaskPriority::Low => "низкий",
+            TaskPriority::Medium => "средний",
+            TaskPriority::High => "высокий",
+            TaskPriority::Undefined => "неизвестно"
+            
+        }
+    }
+
+    fn to_string(&self) -> &'static str {
         match self {
             TaskPriority::Low => "низкий",
             TaskPriority::Medium => "средний",
@@ -283,6 +306,9 @@ impl Task {
 }
 
 fn main() {
+    let conn = init_db().expect("база данных не хочет открываться:(");
+    let mut tasks = load_db(&conn).expect("ошибка загрузки:(");
+
     let mut tasks: Vec<Task> = Vec::new();
 
     loop {
@@ -294,7 +320,8 @@ fn main() {
         println!("5. изменить статус таски");
         println!("6. изменить приоритет таски");
         println!("7. изменить дедлайн таски");
-        println!("8. выход");
+        println!("8. удалить таску");
+        println!("9. выход");
         println!("----------------------------------\n");
         
         let choice = input("выбери действие ");
@@ -305,12 +332,78 @@ fn main() {
                 tasks.push(task);
             }
             "2" => show_tasks(&tasks),
-            "3" => update_name(&mut tasks),
-            "4" => update_description(&mut tasks),
-            "5" => update_status(&mut tasks), 
-            "6" => update_priority(&mut tasks),
-            "7" => update_deadline(&mut tasks),
+            "3" => {
+                if let Some(i) = select_task(&tasks) {
+                    tasks[i].change_name();
+
+                    update_task(
+                        &conn,
+                        tasks[i].id,
+                        "name",
+                        &tasks[i].name
+                    ).expect("не получилось обновить название таски:(")
+                }
+            },
+            "4" => {
+                if let Some(i) = select_task(&tasks) {
+                    tasks[i].change_description();
+
+                    update_task(
+                        &conn,
+                        tasks[i].id,
+                        "description",
+                        &tasks[i].description
+                    ).expect("не получилось обновить описание таски:(")
+                }
+            },
+            "5" => {
+                if let Some(i) = select_task(&tasks) {
+                    tasks[i].change_status();
+
+                    update_task(
+                        &conn,
+                        tasks[i].id,
+                        "status",
+                        tasks[i].status.to_string()
+                    ).expect("не получилось обновить статус таски:(")
+                }
+            }, 
+            "6" => {
+                if let Some(i) = select_task(&tasks) {
+                    tasks[i].change_priority();
+
+                    update_task(
+                        &conn,
+                        tasks[i].id,
+                        "priority",
+                        tasks[i].priority.to_string()
+                    ).expect("не получилось обновить приоритет таски:(")
+                }
+            },
+            "7" => {
+                if let Some(i) = select_task(&tasks) {
+                    tasks[i].change_deadline();
+
+                    update_task(
+                        &conn,
+                        tasks[i].id,
+                        "deadline",
+                        &tasks[i].deadline
+                    ).expect("не получилось обновить дедлайн таски:(")
+                }
+            },
             "8" => {
+                if let Some(i) = select_task(&tasks) {
+                    let id_in_db = tasks[i].id;
+
+                    delete_task(&conn, id_in_db).expect("не получилось удалить таску:(");
+
+                    tasks.remove(i);
+
+                    println!("таска удалена");
+                }
+            }
+            "9" => {
                 println!("сохраняемся...");
                 save_file(&tasks);
                 println!("выход...");
